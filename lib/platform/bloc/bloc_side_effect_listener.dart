@@ -7,10 +7,8 @@ import 'package:provider/single_child_widget.dart';
 
 mixin BlocSideEffectListenerSingleChildWidget on SingleChildWidget {}
 
-typedef BlocWidgetSideEffectListener<C> = void Function(
-  BuildContext context,
-  C sideEffect,
-);
+typedef BlocWidgetSideEffectListener<C> =
+    void Function(BuildContext context, C sideEffect);
 
 class BlocSideEffectListener<B extends SideEffectProvider<C>, C>
     extends BlocSideEffectListenerBase<B, C>

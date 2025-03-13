@@ -10,17 +10,14 @@ class AppRouter {
     initialLocation: Routes.root,
     debugLogDiagnostics: true,
     routes: [
-      GoRoute(
-        path: Routes.root,
-        redirect: (_, __) => '/${Routes.matrixInput}',
-      ),
-      
+      GoRoute(path: Routes.root, redirect: (_, __) => '/${Routes.matrixInput}'),
+
       GoRoute(
         path: '/${Routes.matrixInput}',
         name: Routes.matrixInput,
         builder: (context, state) => const MatrixInputPage(),
       ),
-      
+
       GoRoute(
         path: '/${Routes.matrixResult}',
         name: Routes.matrixResult,
@@ -29,7 +26,7 @@ class AppRouter {
           return const MatrixResultPage();
         },
       ),
-      
+
       GoRoute(
         path: '/${Routes.settings}',
         name: Routes.settings,

@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write  # Necesario para crear releases
+
 jobs:
   build:
     name: Build APK
@@ -20,7 +23,10 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.29.1
+          flutter-version: 3.19.3
+          
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
       
       - name: Generate version number
         id: version
@@ -52,16 +58,47 @@ jobs:
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/matrix-${{ env.VERSION }}.apk
       
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4  
+        uses: actions/upload-artifact@v4
         with:
           name: matrix-${{ env.VERSION }}.apk
           path: build/app/outputs/flutter-apk/matrix-${{ env.VERSION }}.apk
       
+      - name: Generate changelog
+        if: startsWith(github.ref, 'refs/tags/')
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+          configuration: ".github/changelog-config.json"
+          commitMode: true  # Utiliza los mensajes de commit en lugar de PR
+          fromTag: ${{ github.ref }}
+          toTag: ${{ github.ref }}
+          includeOpen: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2  
+        uses: softprops/action-gh-release@v2
         with:
           files: build/app/outputs/flutter-apk/matrix-${{ env.VERSION }}.apk
-          name: Release ${{ env.VERSION }}
+          name: "Matrix v${{ env.VERSION }}"
+          body: |
+            ## Matrix App v${{ env.VERSION }}
+            
+            Release Date: ${{ github.event.repository.updated_at }}
+            
+            ### What's New
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ### Downloads
+            - [Download APK](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/matrix-${{ env.VERSION }}.apk)
+            
+            ### Installation
+            Download and install the APK file on your Android device.
+            
+            ### Feedback
+            Please report any issues or suggestions in the [issue tracker](https://github.com/${{ github.repository }}/issues).
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

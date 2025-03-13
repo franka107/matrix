@@ -1,0 +1,58 @@
+{
+    "categories": [
+      {
+        "title": "🚀 Features",
+        "labels": ["feature", "enhancement"],
+        "commits_pattern": "^feat(\\(.*\\))?:"
+      },
+      {
+        "title": "🐛 Bug Fixes",
+        "labels": ["fix", "bugfix", "bug"],
+        "commits_pattern": "^fix(\\(.*\\))?:"
+      },
+      {
+        "title": "⚙️ Maintenance",
+        "labels": ["chore", "documentation"],
+        "commits_pattern": "^(chore|docs|refactor|style|perf)(\\(.*\\))?:"
+      },
+      {
+        "title": "📦 Dependencies",
+        "labels": ["dependencies"],
+        "commits_pattern": "^build(\\(.*\\))?:"
+      },
+      {
+        "title": "🧪 Tests",
+        "commits_pattern": "^test(\\(.*\\))?:"
+      }
+    ],
+    "ignore_labels": [
+      "ignore"
+    ],
+    "sort": {
+      "order": "ASC",
+      "on_property": "mergedAt"
+    },
+    "template": "${{CHANGELOG}}",
+    "pr_template": "- ${{TITLE}} (#${{NUMBER}})",
+    "commit_template": "- ${{SUBJECT}}",
+    "empty_template": "- No changes",
+    "transformers": [
+      {
+        "pattern": "[Bb]ump (.*) from (.*) to (.*)",
+        "target": "📦 Bump $1 from $2 to $3"
+      }
+    ],
+    "max_tags_to_fetch": 200,
+    "max_pull_requests": 200,
+    "max_back_track_time_days": 365,
+    "exclude_merge_branches": [
+      "Owner/main"
+    ],
+    "tag_resolver": {
+      "method": "semver"
+    },
+    "base_branches": [
+      "main", 
+      "master"
+    ]
+  }

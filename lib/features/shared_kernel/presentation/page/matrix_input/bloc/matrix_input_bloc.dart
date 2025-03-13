@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:bloc/bloc.dart';
 import 'package:injectable/injectable.dart';
@@ -73,8 +74,53 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
             onData: (data) => data,
           );
           break;
+        case MatrixInputEventGenerateRandomMatrix():
+          await emit.forEach<MatrixInputModel>(
+            _onGenerateRandomMatrix(event),
+            onData: (data) => data,
+          );
+          break;
       }
     });
+  }
+
+  int _getRandomInt(int min, int max) {
+    return (min + Random().nextInt(max - min + 1)).toInt();
+  }
+
+  Stream<MatrixInputModel> _onGenerateRandomMatrix(
+    MatrixInputEventGenerateRandomMatrix event,
+  ) async* {
+    // Generar valores aleatorios entre -9 y 9
+    final randomMatrix = List.generate(
+      state.matrixSize,
+      (_) => List.generate(state.matrixSize, (_) => _getRandomInt(-9, 9)),
+    );
+
+    final randomMatrixJson = jsonEncode(randomMatrix);
+
+    if (state.isVisualInputMode) {
+      yield state.copyWith(
+        matrixValues: randomMatrix,
+        isValidInput: true,
+        errorMessage: null,
+      );
+    } else {
+      yield state.copyWith(
+        matrixInput: randomMatrixJson,
+        matrixValues: randomMatrix,
+        isValidInput: true,
+        errorMessage: null,
+      );
+    }
+
+    // Mostrar un mensaje de éxito
+    produceSideEffect(
+      MatrixInputSideEffect.showToast(
+        message:
+            'Matriz aleatoria ${state.matrixSize}x${state.matrixSize} generada',
+      ),
+    );
   }
 
   Stream<MatrixInputModel> _onInitialized(
@@ -97,7 +143,32 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
       MatrixDomain.parseFromString(event.input);
       yield state.copyWith(isValidInput: true, errorMessage: null);
     } catch (e) {
-      yield state.copyWith(isValidInput: false, errorMessage: e.toString());
+      // Convertir el error técnico a un mensaje amigable
+      String userFriendlyMessage = _getUserFriendlyErrorMessage(e.toString());
+      yield state.copyWith(
+        isValidInput: false,
+        errorMessage: userFriendlyMessage,
+      );
+    }
+  }
+
+  // Método para convertir errores técnicos en mensajes comprensibles
+  String _getUserFriendlyErrorMessage(String errorMessage) {
+    if (errorMessage.contains('FormatException')) {
+      if (errorMessage.contains('Each row must be an array')) {
+        return 'Formato inválido: cada fila debe ser un array. Ejemplo: [[1,2],[3,4]]';
+      } else if (errorMessage.contains('Each value must be a number')) {
+        return 'Formato inválido: todos los valores deben ser números.';
+      } else {
+        return 'Formato de matriz inválido. Asegúrate de usar la estructura JSON correcta: [[1,2],[3,4]]';
+      }
+    } else if (errorMessage.contains('Unexpected')) {
+      return 'Formato JSON inválido. Revisa que los corchetes y comas estén correctos.';
+    } else if (errorMessage.contains('Empty')) {
+      return 'La matriz no puede estar vacía.';
+    } else {
+      // Si no reconocemos el error, damos un mensaje genérico
+      return 'Formato inválido. Verifica que la matriz esté en formato correcto: [[1,2],[3,4]]';
     }
   }
 
@@ -153,10 +224,7 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
       );
 
       // Restablecer el estado a "ready" para permitir nuevas entradas
-      yield state.copyWith(
-        status: const MatrixInputStatus.ready(),
-      );
-      
+      yield state.copyWith(status: const MatrixInputStatus.ready());
     } catch (e) {
       yield state.copyWith(
         status: MatrixInputStatus.error(message: e.toString()),
@@ -179,22 +247,25 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
     MatrixInputEventInputModeToggled event,
   ) async* {
     final newMode = !state.isVisualInputMode;
-    
+
     if (newMode) {
       // Switching to visual mode - try to parse current input or create empty
       try {
         MatrixDomain matrix;
-        
+
         if (state.matrixInput.isNotEmpty && state.isValidInput) {
           // If we have valid input, parse it
           matrix = MatrixDomain.parseFromString(state.matrixInput);
         } else {
           // Otherwise create an empty matrix of specified size
           matrix = MatrixDomain(
-            List.generate(state.matrixSize, (_) => List.filled(state.matrixSize, 0)),
+            List.generate(
+              state.matrixSize,
+              (_) => List.filled(state.matrixSize, 0),
+            ),
           );
         }
-        
+
         yield state.copyWith(
           isVisualInputMode: true,
           matrixValues: matrix.values,
@@ -202,10 +273,10 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
       } catch (e) {
         // On error, create an empty matrix
         final emptyMatrix = List.generate(
-          state.matrixSize, 
+          state.matrixSize,
           (_) => List.filled(state.matrixSize, 0),
         );
-        
+
         yield state.copyWith(
           isVisualInputMode: true,
           matrixValues: emptyMatrix,
@@ -221,9 +292,7 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
           isValidInput: true,
         );
       } else {
-        yield state.copyWith(
-          isVisualInputMode: false,
-        );
+        yield state.copyWith(isVisualInputMode: false);
       }
     }
   }
@@ -233,21 +302,33 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
   ) async* {
     if (event.size < 1 || event.size > 10) {
       yield state.copyWith(
-        status: const MatrixInputStatus.error(message: 'Matrix size must be between 1 and 10'),
+        status: const MatrixInputStatus.error(
+          message: 'El tamaño de la matriz debe estar entre 1 y 10',
+        ),
       );
       return;
     }
-    
-    // Create a new empty matrix with the new dimensions
+
     final emptyMatrix = List.generate(
-      event.size, 
+      event.size,
       (_) => List.filled(event.size, 0),
     );
-    
+
+    final matrixJson = jsonEncode(emptyMatrix);
+
     yield state.copyWith(
       matrixSize: event.size,
       matrixValues: emptyMatrix,
+      matrixInput: matrixJson, // Importante: actualiza siempre el texto
+      isValidInput: true, // La matriz vacía generada es válida
+      errorMessage: null, // Limpia cualquier error
       status: const MatrixInputStatus.ready(),
+    );
+
+    produceSideEffect(
+      MatrixInputSideEffect.showToast(
+        message: 'Matriz ${event.size}x${event.size} creada',
+      ),
     );
   }
 
@@ -255,22 +336,19 @@ class MatrixInputBloc extends Bloc<MatrixInputEvent, MatrixInputModel>
     MatrixInputEventMatrixCellChanged event,
   ) async* {
     if (state.matrixValues == null) return;
-    
-    // Create a deep copy of the current matrix
+
     final List<List<int>> updatedMatrix = List.generate(
       state.matrixValues!.length,
       (i) => List<int>.from(state.matrixValues![i]),
     );
-    
-    // Update the specified cell if in valid range
-    if (event.row >= 0 && event.row < updatedMatrix.length &&
-        event.column >= 0 && event.column < updatedMatrix[event.row].length) {
+
+    if (event.row >= 0 &&
+        event.row < updatedMatrix.length &&
+        event.column >= 0 &&
+        event.column < updatedMatrix[event.row].length) {
       updatedMatrix[event.row][event.column] = event.value;
     }
-    
-    yield state.copyWith(
-      matrixValues: updatedMatrix,
-      isValidInput: true,
-    );
+
+    yield state.copyWith(matrixValues: updatedMatrix, isValidInput: true);
   }
 }

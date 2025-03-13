@@ -28,6 +28,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
+        fontFamily: 'Lufga'
       ),
       themeMode: ThemeMode.system,
       // Use the router configuration from AppRouter

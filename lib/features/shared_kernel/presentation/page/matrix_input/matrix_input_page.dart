@@ -95,7 +95,50 @@ class _MatrixInputForm extends StatelessWidget {
             'Enter a square matrix (NxN) as a JSON array of arrays:',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 8),
+
+          // Añadir selector de tamaño aquí para hacerlo más prominente
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                'Matrix size: ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<int>(
+                value: state.matrixSize,
+                items:
+                    List.generate(8, (i) => i + 1)
+                        .map(
+                          (size) => DropdownMenuItem(
+                            value: size,
+                            child: Text('$size x $size'),
+                          ),
+                        )
+                        .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    context.read<MatrixInputBloc>().add(
+                      MatrixInputEvent.matrixDimensionsChanged(size: value),
+                    );
+                  }
+                },
+              ),
+              const Spacer(),
+              // Añadir un botón para generar matriz aleatoria
+              TextButton.icon(
+                onPressed: () {
+                  context.read<MatrixInputBloc>().add(
+                    const MatrixInputEvent.generateRandomMatrix(),
+                  );
+                },
+                icon: const Icon(Icons.shuffle),
+                label: const Text('Random'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
           Text(
             'Example: [[1,2],[3,4]] for a 2x2 matrix',
             style: Theme.of(
@@ -160,10 +203,39 @@ class _MatrixInputForm extends StatelessWidget {
   }
 }
 
-class _TextInputMode extends StatelessWidget {
+class _TextInputMode extends StatefulWidget {
   const _TextInputMode({required this.state});
 
   final MatrixInputModel state;
+
+  @override
+  State<_TextInputMode> createState() => _TextInputModeState();
+}
+
+class _TextInputModeState extends State<_TextInputMode> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.state.matrixInput);
+  }
+
+  @override
+  void didUpdateWidget(_TextInputMode oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Actualiza el controlador si el texto cambió pero el foco no está en este campo
+    if (widget.state.matrixInput != _controller.text &&
+        !_controller.selection.isValid) {
+      _controller.text = widget.state.matrixInput;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,18 +243,20 @@ class _TextInputMode extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
-          initialValue: state.matrixInput,
+          controller: _controller,
           decoration: InputDecoration(
             border: const OutlineInputBorder(),
             hintText: '[[1,2],[3,4]]',
             labelText: 'Matrix Input',
-            errorText: state.errorMessage,
+            errorText: widget.state.errorMessage,
             suffixIcon: IconButton(
               icon: const Icon(Icons.clear),
-              onPressed:
-                  () => context.read<MatrixInputBloc>().add(
-                    const MatrixInputEvent.clearButtonPressed(),
-                  ),
+              onPressed: () {
+                _controller.clear(); // Limpia el controlador
+                context.read<MatrixInputBloc>().add(
+                  const MatrixInputEvent.clearButtonPressed(),
+                );
+              },
             ),
           ),
           maxLines: 5,
@@ -192,30 +266,6 @@ class _TextInputMode extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            const Text('Matrix size: '),
-            DropdownButton<int>(
-              value: state.matrixSize,
-              items:
-                  List.generate(8, (i) => i + 1)
-                      .map(
-                        (size) => DropdownMenuItem(
-                          value: size,
-                          child: Text('$size x $size'),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<MatrixInputBloc>().add(
-                    MatrixInputEvent.matrixDimensionsChanged(size: value),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -235,30 +285,6 @@ class _VisualInputMode extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Text('Matrix size: '),
-            DropdownButton<int>(
-              value: state.matrixSize,
-              items:
-                  List.generate(8, (i) => i + 1)
-                      .map(
-                        (size) => DropdownMenuItem(
-                          value: size,
-                          child: Text('$size x $size'),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  context.read<MatrixInputBloc>().add(
-                    MatrixInputEvent.matrixDimensionsChanged(size: value),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
         const SizedBox(height: 16),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

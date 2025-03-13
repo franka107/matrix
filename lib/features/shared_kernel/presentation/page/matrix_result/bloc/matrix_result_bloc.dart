@@ -103,13 +103,8 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
     yield state.copyWith(status: const MatrixResultStatus.loading());
 
     try {
-      // Create MatrixDomain from current rotated matrix
       final currentMatrix = MatrixDomain(state.rotatedMatrix!);
-
-      // Apply rotation again
       final newRotatedMatrix = _rotateMatrixUseCase.call(currentMatrix);
-
-      // Save to repository with timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       await _matrixRepository.saveMatrix('original_$timestamp', currentMatrix);
       await _matrixRepository.saveMatrix(
@@ -117,7 +112,6 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
         newRotatedMatrix,
       );
 
-      // Update state with new rotation
       yield state.copyWith(
         originalMatrix: state.rotatedMatrix,
         rotatedMatrix: newRotatedMatrix.values,
@@ -128,7 +122,6 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
         showAnimation: true,
       );
 
-      // Show toast
       produceSideEffect(
         MatrixResultSideEffect.showToast(
           message: 'Matrix rotated 90° counter-clockwise',
@@ -144,22 +137,10 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
   Stream<MatrixResultModel> _onCopyMatrixToClipboard(
     MatrixResultEventCopyMatrixToClipboard event,
   ) async* {
-    // produceSideEffect(
-    //   MatrixResultSideEffect.copyToClipboard(
-    //     content: event.matrix,
-    //   ),
-    // );
-
     produceSideEffect(
-      MatrixResultSideEffect.showToast(
-        message:
-            event.isOriginal
-                ? 'Original matrix copied to clipboard'
-                : 'Rotated matrix copied to clipboard',
-      ),
+      MatrixResultSideEffect.copyToClipboard(content: event.matrix),
     );
 
-    // No need to change state
     yield state;
   }
 
@@ -169,11 +150,9 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
     yield state.copyWith(status: const MatrixResultStatus.loading());
 
     try {
-      // Get all matrices from repository
       final allMatrices = await _matrixRepository.getAllMatrices();
       final historyItems = <Map<String, dynamic>>[];
 
-      // Process matrices to find pairs of original/rotated
       for (int i = 0; i < allMatrices.length; i += 2) {
         if (i + 1 < allMatrices.length) {
           final original = allMatrices[i];
@@ -182,8 +161,7 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
           historyItems.add({
             'originalMatrix': original.values,
             'rotatedMatrix': rotated.values,
-            'timestamp':
-                DateTime.now(), // Replace with actual timestamp if available
+            'timestamp': DateTime.now(),
           });
         }
       }
@@ -211,7 +189,7 @@ class MatrixResultBloc extends Bloc<MatrixResultEvent, MatrixResultModel>
         originalMatrix: event.originalMatrix,
         rotatedMatrix: event.rotatedMatrix,
       ),
-      showAnimation: false, // Don't animate when loading from history
+      showAnimation: false,
     );
 
     produceSideEffect(

@@ -207,6 +207,38 @@ String toString() {
 /// @nodoc
 
 
+class MatrixInputEventGenerateRandomMatrix implements MatrixInputEvent {
+  const MatrixInputEventGenerateRandomMatrix();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MatrixInputEventGenerateRandomMatrix);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'MatrixInputEvent.generateRandomMatrix()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
 class MatrixInputEventInputModeToggled implements MatrixInputEvent {
   const MatrixInputEventInputModeToggled();
   

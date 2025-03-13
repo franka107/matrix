@@ -165,6 +165,8 @@ class _SuccessViewState extends State<_SuccessView>
 
   @override
   Widget build(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -179,33 +181,31 @@ class _SuccessViewState extends State<_SuccessView>
           AnimatedBuilder(
             animation: _animation,
             builder: (context, child) {
-              return Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Opacity(
-                          opacity: 1 - _animation.value * 0.5,
-                          child: _MatrixDisplay(
-                            title: 'Original Matrix',
-                            matrix: widget.originalMatrix,
-                            highlightColor: Colors.blue.shade100,
-                          ),
-                        ),
+              // En pantallas pequeñas, mostramos las matrices una encima de otra
+              if (isSmallScreen) {
+                return Column(
+                  children: [
+                    Opacity(
+                      opacity: 1 - _animation.value * 0.5,
+                      child: _MatrixDisplay(
+                        title: 'Original Matrix',
+                        matrix: widget.originalMatrix,
+                        highlightColor: Colors.blue.shade100,
                       ),
-                      SizedBox(
-                        width: 80,
-                        child: Stack(
-                          alignment: Alignment.center,
+                    ),
+                    SizedBox(
+                      height: 60,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.arrow_forward,
+                              Icons.arrow_downward,
                               size: 24 + (_animation.value * 8),
                               color: Theme.of(context).colorScheme.primary,
                             ),
                             Positioned(
-                              bottom: 0,
+                              right: 0,
                               child: Text(
                                 '90° CCW',
                                 style: Theme.of(context).textTheme.bodySmall,
@@ -214,25 +214,72 @@ class _SuccessViewState extends State<_SuccessView>
                           ],
                         ),
                       ),
-                      Expanded(
-                        child: Opacity(
-                          opacity: _animation.value,
-                          child: _MatrixDisplay(
-                            title: 'Rotated Matrix',
-                            matrix: widget.rotatedMatrix,
-                            highlightColor: Colors.green.shade100,
-                          ),
+                    ),
+                    Opacity(
+                      opacity: _animation.value,
+                      child: _MatrixDisplay(
+                        title: 'Rotated Matrix',
+                        matrix: widget.rotatedMatrix,
+                        highlightColor: Colors.green.shade100,
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // En pantallas más grandes, mantenemos el diseño horizontal
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Opacity(
+                        opacity: 1 - _animation.value * 0.5,
+                        child: _MatrixDisplay(
+                          title: 'Original Matrix',
+                          matrix: widget.originalMatrix,
+                          highlightColor: Colors.blue.shade100,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              );
+                    ),
+                    SizedBox(
+                      width: 80,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 24 + (_animation.value * 8),
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            child: Text(
+                              '90° CCW',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Opacity(
+                        opacity: _animation.value,
+                        child: _MatrixDisplay(
+                          title: 'Rotated Matrix',
+                          matrix: widget.rotatedMatrix,
+                          highlightColor: Colors.green.shade100,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
             },
           ),
           const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               ElevatedButton.icon(
                 onPressed: () {
@@ -263,24 +310,18 @@ class _SuccessViewState extends State<_SuccessView>
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.read<MatrixResultBloc>().add(
-                      const MatrixResultEvent.rotateAgain(),
-                    );
-                  },
-                  icon: const Icon(Icons.rotate_90_degrees_ccw),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                  label: const Text('Rotate Again (90° CCW)'),
-                ),
-              ),
-            ],
+          ElevatedButton.icon(
+            onPressed: () {
+              context.read<MatrixResultBloc>().add(
+                const MatrixResultEvent.rotateAgain(),
+              );
+            },
+            icon: const Icon(Icons.rotate_90_degrees_ccw),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+            label: const Text('Rotate Again (90° CCW)'),
           ),
           const SizedBox(height: 8),
           TextButton.icon(
@@ -311,61 +352,190 @@ class _MatrixDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calcular el tamaño dinámico de las celdas según el tamaño de la matriz
+    final matrixSize = matrix.length;
+    // Para matrices grandes, reducimos el tamaño de las celdas
+    final cellSize =
+        matrixSize <= 4
+            ? 40.0
+            : matrixSize <= 6
+            ? 35.0
+            : matrixSize <= 8
+            ? 30.0
+            : 25.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.fullscreen, size: 20),
+              onPressed: () => _showExpandedMatrix(context),
+              tooltip: 'Ver matriz completa',
+            ),
+          ],
+        ),
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(8),
             color: highlightColor ?? Colors.transparent,
           ),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children:
-                matrix.map((row) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children:
-                          row.map((value) {
-                            return Container(
-                              width: 40,
-                              height: 40,
-                              margin: const EdgeInsets.all(2),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: Colors.grey.shade300),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
+          constraints: BoxConstraints(
+            maxHeight: 240,
+            maxWidth: MediaQuery.of(context).size.width * 0.45,
+          ),
+          child: SingleChildScrollView(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children:
+                      matrix.map((row) {
+                        return Row(
+                          children:
+                              row.map((value) {
+                                return Container(
+                                  width: cellSize,
+                                  height: cellSize,
+                                  margin: const EdgeInsets.all(1),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: Text(
-                                value.toString(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                    ),
-                  );
-                }).toList(),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      value.toString(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        );
+                      }).toList(),
+                ),
+              ),
+            ),
           ),
         ),
       ],
     );
+  }
+
+  void _showExpandedMatrix(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$title (${matrix.length}x${matrix[0].length})',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                      maxWidth: MediaQuery.of(context).size.width * 0.8,
+                    ),
+                    child: InteractiveViewer(
+                      boundaryMargin: const EdgeInsets.all(20),
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: SingleChildScrollView(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Column(
+                            children:
+                                matrix.map((row) {
+                                  return Row(
+                                    children:
+                                        row.map((value) {
+                                          return Container(
+                                            width: 48,
+                                            height: 48,
+                                            margin: const EdgeInsets.all(2),
+                                            alignment: Alignment.center,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              border: Border.all(
+                                                color: Colors.grey.shade300,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.05),
+                                                  blurRadius: 2,
+                                                  offset: const Offset(0, 1),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              value.toString(),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                  );
+                                }).toList(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      final matrixJson = _matrixToString();
+                      Clipboard.setData(ClipboardData(text: matrixJson));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Matrix copied to clipboard'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    child: const Text('Copy Matrix'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  String _matrixToString() {
+    return '[${matrix.map((row) => '[${row.join(',')}]').join(',')}]';
   }
 }
 
@@ -418,6 +588,8 @@ class _HistoryView extends StatelessWidget {
       return const Center(child: Text('No rotation history available'));
     }
 
+    final isSmallScreen = MediaQuery.of(context).size.width < 600;
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       shrinkWrap: true,
@@ -452,25 +624,37 @@ class _HistoryView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MatrixDisplay(
-                        title: 'Original',
-                        matrix: originalMatrix,
+                // Adaptable layout para matrices en el historial
+                if (isSmallScreen)
+                  Column(
+                    children: [
+                      _MatrixDisplay(title: 'Original', matrix: originalMatrix),
+                      const SizedBox(height: 12),
+                      const Icon(Icons.arrow_downward),
+                      const SizedBox(height: 12),
+                      _MatrixDisplay(title: 'Rotated', matrix: rotatedMatrix),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MatrixDisplay(
+                          title: 'Original',
+                          matrix: originalMatrix,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.arrow_forward),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _MatrixDisplay(
-                        title: 'Rotated',
-                        matrix: rotatedMatrix,
+                      const SizedBox(width: 16),
+                      const Icon(Icons.arrow_forward),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _MatrixDisplay(
+                          title: 'Rotated',
+                          matrix: rotatedMatrix,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 const SizedBox(height: 8),
                 Center(
                   child: TextButton(
@@ -494,7 +678,8 @@ class _HistoryView extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
 

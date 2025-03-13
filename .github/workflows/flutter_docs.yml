@@ -1,0 +1,77 @@
+name: Generate & Deploy Docs
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "lib/**"
+      - "pubspec.yaml"
+      - ".github/workflows/docs_deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.19.0
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Install dartdoc
+        run: flutter pub global activate dartdoc
+      
+      - name: Generate documentation
+        run: |
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          mkdir -p docs
+          dartdoc --output docs
+      
+      - name: Create index redirect
+        run: |
+          cat > docs/index.html << EOF
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta http-equiv="refresh" content="0;url=./api/">
+              <title>Redirect to API Documentation</title>
+            </head>
+            <body>
+              Redirecting to <a href="./api/">API documentation</a>...
+            </body>
+          </html>
+          EOF
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

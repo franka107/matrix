@@ -8,6 +8,12 @@
 
 Matrix is a demonstration project showcasing modern Flutter development practices, architectural patterns, and DevOps workflows. This project is built as a technical assessment, implementing a comprehensive set of software engineering best practices.
 
+## Demo Videos
+
+### Matrix Rotation Demo
+
+https://github.com/user-attachments/assets/9685a6f7-2f8b-468f-a61f-8e93f142d799
+
 ## Architecture & Design Patterns
 
 ### Hexagonal Architecture (Ports & Adapters)
@@ -133,11 +139,7 @@ assets/
 └── videos/                            # Demo videos and animations
 ```
 
-## Demo Videos
 
-### Matrix Rotation Demo
-
-![Matrix Rotation Demo](assets/videos/matrix-rotation-demo.mp4)
 
 ## Documentation
 

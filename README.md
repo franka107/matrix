@@ -29,6 +29,7 @@ The UI follows the MVI pattern, ensuring unidirectional data flow:
 ### Error Handling with Either
 
 The project uses the Either pattern for comprehensive error handling:
+
 - **Right**: Represents successful operations
 - **Left**: Represents failures or errors
 
@@ -37,6 +38,7 @@ The project uses the Either pattern for comprehensive error handling:
 ### Test-Driven Development (TDD)
 
 All features are developed using TDD principles:
+
 1. Write failing tests first
 2. Implement minimal code to pass tests
 3. Refactor while keeping tests passing
@@ -44,12 +46,14 @@ All features are developed using TDD principles:
 ### Dependency Injection
 
 The project uses dependency injection for better testability and maintainability:
+
 - Services and repositories are injected into components that depend on them
 - Mocks can easily replace real implementations during testing
 
 ### Continuous Integration
 
 Robust CI/CD pipelines are implemented using GitHub Actions:
+
 - **Automated Testing**: Every commit runs unit and widget tests
 - **Build Pipeline**: Automatic APK generation with semantic versioning
 - **Documentation**: Automatic generation and deployment of API docs
@@ -96,17 +100,45 @@ flutter test --coverage
 
 ```bash
 lib/
-├── application/        # Use cases and application services
-├── domain/             # Business entities and core logic
-├── infrastructure/     # External implementations (API, DB)
-├── presentation/       # UI components and state management
-│   ├── bloc/           # BLoC components for MVI
-│   ├── pages/          # Application screens
-│   └── widgets/        # Reusable UI components
-└── main.dart           # Application entry point
+├── features/                          # Main application modules
+│   └── shared_kernel/                 # Components shared across features
+│       ├── application/               # Application layer
+│       │   └── di/                    # Dependency injection
+│       ├── domain/                    # Business logic
+│       │   ├── entities/              # Domain entities
+│       │   ├── repositories/          # Repository interfaces
+│       │   └── use_case/              # Use cases
+│       └── presentation/              # Presentation layer
+│           ├── navigation/            # Routing configuration
+│           └── page/                  # Application pages
+│               ├── matrix_input/      # Matrix input page
+│               │   └── bloc/          # BLoC components for MVI
+│               ├── matrix_result/     # Rotation result page
+│               │   └── bloc/          # BLoC components for MVI
+│               └── settings/          # Application settings
+├── platform/                          # Platform abstractions
+│   └── bloc/                          # Base BLoC implementation
+└── main.dart                          # Application entry point
 
-test/                   # Test files mirroring lib structure
+test/
+├── features/                          # Tests mirroring lib/ structure
+│   └── shared_kernel/
+│       ├── domain/                    # Domain logic tests
+│       │   └── use_case/              # Use case tests
+│       └── presentation/              # UI component tests
+└── widget_test.dart                   # Widget integration tests
+
+assets/
+├── images/                            # Static images
+└── videos/                            # Demo videos and animations
 ```
+
+## Demo Videos
+
+### Matrix Rotation Demo
+
+<video src="assets/videos/matrix-rotation-demo.mp4" controls="controls" style="max-width: 730px;">
+</video>
 
 ## Documentation
 

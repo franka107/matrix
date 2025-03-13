@@ -55,7 +55,7 @@ jobs:
           echo "Files generated in docs directory:"
           ls -la docs
       
-      - name: Create correct structure for GitHub Pages
+      - name: Create index.html if needed
         run: |
           # Si dartdoc generó 'docs/api', copia su contenido a 'docs'
           if [ -d "docs/api" ]; then
@@ -67,23 +67,21 @@ jobs:
           # En caso de que dartdoc genere en otro directorio, ajustamos según sea necesario
           if [ ! -f "docs/index.html" ]; then
             echo "Creating custom index.html"
-            cat > docs/index.html << EOF
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="UTF-8">
-                <title>Matrix API Documentation</title>
-              </head>
-              <body>
-                <h1>Matrix API Documentation</h1>
-                <p>Welcome to the API documentation for the Matrix project.</p>
-                <ul>
-                  <li><a href="./classes.html">Classes</a></li>
-                  <li><a href="./functions.html">Functions</a></li>
-                </ul>
-              </body>
-            </html>
-            EOF
+            echo '<!DOCTYPE html>' > docs/index.html
+            echo '<html>' >> docs/index.html
+            echo '  <head>' >> docs/index.html
+            echo '    <meta charset="UTF-8">' >> docs/index.html
+            echo '    <title>Matrix API Documentation</title>' >> docs/index.html
+            echo '  </head>' >> docs/index.html
+            echo '  <body>' >> docs/index.html
+            echo '    <h1>Matrix API Documentation</h1>' >> docs/index.html
+            echo '    <p>Welcome to the API documentation for the Matrix project.</p>' >> docs/index.html
+            echo '    <ul>' >> docs/index.html
+            echo '      <li><a href="./classes.html">Classes</a></li>' >> docs/index.html
+            echo '      <li><a href="./functions.html">Functions</a></li>' >> docs/index.html
+            echo '    </ul>' >> docs/index.html
+            echo '  </body>' >> docs/index.html
+            echo '</html>' >> docs/index.html
           fi
           
           # Debug - Verificar estructura final

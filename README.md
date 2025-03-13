@@ -90,9 +90,11 @@ flutter test
 
 # Run tests with coverage
 flutter test --coverage
+```
 
 ### Project Structure
 
+```bash
 lib/
 ├── application/        # Use cases and application services
 ├── domain/             # Business entities and core logic
@@ -104,6 +106,7 @@ lib/
 └── main.dart           # Application entry point
 
 test/                   # Test files mirroring lib structure
+```
 
 ## Documentation
 

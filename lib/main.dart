@@ -63,7 +63,7 @@ class MyHomePage extends StatefulWidget {
 
 /// The state class for [MyHomePage].
 ///
-/// This class maintains the counter value and provides methods to manipulate data.
+/// This class maintains the counter value and provides methods to manipulate.
 /// the state of the [MyHomePage] widget.
 class _MyHomePageState extends State<MyHomePage> {
   /// The counter value that is displayed and incremented.

@@ -137,8 +137,7 @@ assets/
 
 ### Matrix Rotation Demo
 
-<video src="assets/videos/matrix-rotation-demo.mp4" controls="controls" style="max-width: 730px;">
-</video>
+![Matrix Rotation Demo](assets/videos/matrix-rotation-demo.mp4)
 
 ## Documentation
 

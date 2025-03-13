@@ -1,0 +1,42 @@
+name: Update Version
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  update-version:
+    name: Update pubspec.yaml Version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.VERSION_UPDATE_TOKEN }}  
+      
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version extracted: $VERSION"
+      
+      - name: Update version in pubspec.yaml
+        run: |
+          # Actualizar la versión en pubspec.yaml
+          sed -i "s/^version: .*/version: ${{ env.VERSION }}/" pubspec.yaml
+          
+          # Mostrar el cambio
+          echo "Updated pubspec.yaml version to ${{ env.VERSION }}"
+          grep "version:" pubspec.yaml
+      
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          
+          git add pubspec.yaml
+          git commit -m "chore: update version to ${{ env.VERSION }} [skip ci]"
+          git push

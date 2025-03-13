@@ -100,7 +100,9 @@ class _BlocSideEffectListenerBaseState<B extends SideEffectProvider<C>, C>
 
   void _subscribe() {
     _subscription = _bloc.sideEffects.listen((command) {
-      widget.listener(context, command);
+      if (mounted) {
+        widget.listener(context, command);
+      }
     });
   }
 

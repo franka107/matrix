@@ -36,6 +36,9 @@ jobs:
           channel: stable
           flutter-version: 3.29.1
       
+      - name: Disable Flutter analytics
+        run: flutter config --no-analytics
+      
       - name: Install dependencies
         run: flutter pub get
       
@@ -47,22 +50,45 @@ jobs:
           export PATH="$PATH:$HOME/.pub-cache/bin"
           mkdir -p docs
           dartdoc --output docs
+          
+          # Debug - List what was generated
+          echo "Files generated in docs directory:"
+          ls -la docs
       
-      - name: Create index redirect
+      - name: Create correct structure for GitHub Pages
         run: |
-          cat > docs/index.html << EOF
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="UTF-8">
-              <meta http-equiv="refresh" content="0;url=./api/">
-              <title>Redirect to API Documentation</title>
-            </head>
-            <body>
-              Redirecting to <a href="./api/">API documentation</a>...
-            </body>
-          </html>
-          EOF
+          # Si dartdoc generó 'docs/api', copia su contenido a 'docs'
+          if [ -d "docs/api" ]; then
+            echo "Moving docs/api/* to docs/"
+            cp -r docs/api/* docs/
+            rm -rf docs/api
+          fi
+          
+          # En caso de que dartdoc genere en otro directorio, ajustamos según sea necesario
+          if [ ! -f "docs/index.html" ]; then
+            echo "Creating custom index.html"
+            cat > docs/index.html << EOF
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <meta charset="UTF-8">
+                <title>Matrix API Documentation</title>
+              </head>
+              <body>
+                <h1>Matrix API Documentation</h1>
+                <p>Welcome to the API documentation for the Matrix project.</p>
+                <ul>
+                  <li><a href="./classes.html">Classes</a></li>
+                  <li><a href="./functions.html">Functions</a></li>
+                </ul>
+              </body>
+            </html>
+            EOF
+          fi
+          
+          # Debug - Verificar estructura final
+          echo "Final documentation structure:"
+          find docs -type f | sort
       
       - name: Setup Pages
         uses: actions/configure-pages@v4

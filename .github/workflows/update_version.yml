@@ -14,7 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.VERSION_UPDATE_TOKEN }}  
+          token: ${{ secrets.VERSION_UPDATE_TOKEN }}
+          fetch-depth: 0  # Asegúrate de obtener todo el historial
       
       - name: Extract version from tag
         id: get_version
@@ -22,6 +23,23 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Version extracted: $VERSION"
+      
+      - name: Setup Git and checkout main branch
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          
+          # Determinar la rama principal (main o master)
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            echo "MAIN_BRANCH=main" >> $GITHUB_ENV
+            git checkout main
+          else
+            echo "MAIN_BRANCH=master" >> $GITHUB_ENV
+            git checkout master
+          fi
+          
+          # Pull latest changes
+          git pull
       
       - name: Update version in pubspec.yaml
         run: |
@@ -34,9 +52,6 @@ jobs:
       
       - name: Commit and push changes
         run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'actions@github.com'
-          
           git add pubspec.yaml
           git commit -m "chore: update version to ${{ env.VERSION }} [skip ci]"
-          git push
+          git push origin ${{ env.MAIN_BRANCH }}
